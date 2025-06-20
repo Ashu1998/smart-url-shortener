@@ -44,4 +44,52 @@ export class UrlController {
     });
   }
 
+  static async redirectToOriginalUrl(req: Request, res: Response) : Promise<void> {
+    const redis = await RedisClient.getInstance();
+    const { shortId } = req.params;
+    if(!shortId) {
+      res.status(400).json({
+        error: "Short ID is required"
+      });
+      return;
+    }
+
+    const originalUrl = await redis.get(shortId);
+    if(!originalUrl) {
+      res.status(404).json({
+        error: "URL not found"
+      });
+      return;
+    }
+
+    const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "";
+    const userAgent = req.headers["user-agent"] || "";
+    const referrer = req.headers["referer"] || "";
+
+    await redis.incr(`clicks:${shortId}`);
+    await redis.rpush(`analytics:${shortId}`, JSON.stringify({ ip, userAgent, referrer, ts: Date.now() }));
+
+    return res.redirect(originalUrl);    
+  }
+
+  static async getAnalytics(req: Request, res: Response) : Promise<void> {
+    const redis = await RedisClient.getInstance();
+    const { shortId } = req.params;
+    if(!shortId) {
+      res.status(400).json({
+        error: "Short ID is required"
+      });
+      return;
+    }
+
+    const clicks = await redis.get(`clicks:${shortId}`);
+    const logs = await redis.lrange(`analytics:${shortId}`, 0, -1);
+
+    res.status(200).json({
+      "shortUrl" : `${process.env.BASE_URL}/${shortId}`,
+      "totalClicks" : clicks,
+      "visits" : logs
+    });    
+  }
+
 }
