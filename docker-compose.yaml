@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    ports:
+      - "5051:5051"
+    environment:
+      - NODE_ENV=development
+      - PORT=5051
+      - BASE_URL=http://localhost:5051
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - AI_URL=http://host.docker.internal:8999
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+      
