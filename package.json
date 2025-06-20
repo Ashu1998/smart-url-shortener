@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev" : "nodemon src/server.ts",
-    "build" : "tsc",
-    "start" : "node dist/server.js"
+    "dev": "nodemon src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
   },
   "repository": {
     "type": "git",
@@ -27,6 +27,7 @@
   "dependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^24.0.3",
+    "axios": "^1.10.0",
     "crypto": "^1.0.1",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",

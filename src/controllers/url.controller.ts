@@ -3,6 +3,8 @@ import Helper from "../utils/helper";
 import crypto from "crypto";
 import RedisClient from "../utils/redis";
 import {nanoid} from "nanoid";
+import { isMaliciousUrl } from "../services/aiUrlScanner";
+import { isUrlMaliciousCached, cacheUrlScanResult } from "../services/urlCache";
 
 export class UrlController {
   static async createShortUrl(req: Request, res: Response) : Promise<void> {
@@ -21,6 +23,35 @@ export class UrlController {
         error: "Invalid URL provided"
       });
       return;
+    }
+
+    const cachedResult = await isUrlMaliciousCached(originalUrl);
+    if(cachedResult !== null) {
+      if(Boolean(cachedResult)) {
+        res.status(400).json({
+          error: "URL flagged as malicious by AI. Cannot shorten."
+        });
+        return;
+      }
+    } else {
+      const isMaliciousObject = await isMaliciousUrl(originalUrl);
+      if(!isMaliciousObject.success) {
+        res.status(500).json({
+          error: "Failed to scan URL"
+        });
+        return;
+      }
+
+      const isMalicious = isMaliciousObject.isMalicious;
+
+      await cacheUrlScanResult(originalUrl, isMalicious);
+
+      if(isMalicious) {
+        res.status(400).json({
+          error: "URL flagged as malicious by AI. Cannot shorten."
+        });
+        return;
+      }
     }
 
     const normalizedUrl = Helper.normalizeUrl(originalUrl);

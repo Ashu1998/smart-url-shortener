@@ -11,7 +11,7 @@ services:
       - BASE_URL=http://localhost:5051
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-    
+      - AI_URL=http://host.docker.internal:8999
     depends_on:
       - redis
 
